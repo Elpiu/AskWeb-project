@@ -1,0 +1,9 @@
+<div class="m-2">
+
+  <!-- Chat Box-->
+  <div class="px-0">
+    <div class="px-4 py-5 chat-box bg-white">
+      <app-message *ngFor="let message of messages" [message]="message"></app-message>
+    </div>
+  </div>
+</div>

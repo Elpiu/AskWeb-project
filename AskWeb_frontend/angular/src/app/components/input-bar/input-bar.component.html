@@ -1,0 +1,13 @@
+
+<div class="form-group m-2">
+  <textarea #textAreaSelector
+    class="form-control" id="exampleTextarea" rows="3" (keydown)="clickSendMsg($event)"></textarea>
+  <div class="text-end m-1">
+    <button
+      [disabled]="!userCanSendInput"
+      (click)="clickSendMsg($event)"
+      class="btn btn-primary" type="button" id="button-addon2">
+      <img src="assets/icons/search/icons8-search-cute-clipart-32.png">
+    </button>
+  </div>
+</div>

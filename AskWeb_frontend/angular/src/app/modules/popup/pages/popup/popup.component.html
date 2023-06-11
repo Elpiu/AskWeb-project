@@ -1,7 +1,10 @@
-<h1>Popup</h1>
-<p>You can easily send messages from the popup to the content page with the provided Tab ID!
-  (tabId=<strong>{{ tabId }}</strong>)</p>
+<app-header-bar></app-header-bar>
 
-<button (click)="onClick()">Click me to test</button>
+<app-chat-window
+  [$emitterForNewMessage]="$senderNewMessage"
+></app-chat-window>
 
-<p><strong>{{ message }}</strong></p>
+<app-input-bar
+ [$booleanSubject]="$canUserSendInput"
+ (userSendQuestion)="handleUserSendQuestion($event)"
+></app-input-bar>
