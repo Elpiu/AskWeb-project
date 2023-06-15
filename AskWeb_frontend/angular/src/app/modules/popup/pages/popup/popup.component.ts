@@ -1,89 +1,91 @@
-import {Component, Inject} from '@angular/core';
-import {BehaviorSubject, bindCallback} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {Component, Inject, OnInit} from '@angular/core';
+import {BehaviorSubject} from 'rxjs';
 import {TAB_ID} from '../../../../providers/tab-id.provider';
-import {Message} from "../../../../model/Message";
+import {ConcreteMessage, Message, Sender} from "../../../../model/Message";
+import {ChatService} from "../../services/chat.service";
 
 @Component({
   selector: 'app-popup',
   templateUrl: 'popup.component.html',
   styleUrls: ['popup.component.scss']
 })
-export class PopupComponent {
+export class PopupComponent implements OnInit {
   message: string;
   $canUserSendInput: BehaviorSubject<boolean>
-
   $senderNewMessage: BehaviorSubject<Message>
+  $chromeContentIsChanged: BehaviorSubject<any>
 
+  _url: string = ""
+  _numberMsg: number = 0
 
-  constructor(@Inject(TAB_ID) readonly tabId: number) {
-    this.$canUserSendInput = new BehaviorSubject<boolean>(true);
+  constructor(
+    @Inject(TAB_ID) readonly tabId: number,
+    private chatService: ChatService) {
+    this.$canUserSendInput = new BehaviorSubject<boolean>(false)
     this.$senderNewMessage = new BehaviorSubject<Message>(null)
+    this.$chromeContentIsChanged = new BehaviorSubject<any>(null)
 
-    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-      var currentTab = tabs[0];
-      var url = currentTab.url;
-      console.log(url);
-    });
+    chrome.tabs.query({active: true, currentWindow: true})
+      .then(tabs => {
+        var currentTab = tabs[0];
+        chrome.tabs.sendMessage(currentTab.id, {action: "getDOM"})
+          .then(response => {
+            this._url = response['url']
+            this.$chromeContentIsChanged.next(response)
+          })
+      })
 
-    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-      var currentTab = tabs[0];
-      chrome.tabs.sendMessage(currentTab.id, {action: "getDOM"}, function (response) {
-        console.log(response["content"]);
-      });
-    });
-
-    //setTimeout(() => {
-    //  // La tua funzione da eseguire dopo 3 secondi
-    //  this.$canUserSendInput.next(true)
-    //  console.log(this.$canUserSendInput.value)
-    //}, 3000);
-    setTimeout(() => {
-      // La tua funzione da eseguire dopo 3 secondi
-      let mgs = {
-        id: 1,
-        content: "Ciao! Sono un messaggio di esempio.",
-        time: new Date(),
-        sender: 0,
-        url: "https://example.com"
-      }
-      this.$senderNewMessage.next(mgs)
-      console.log("msg  inviato")
-    }, 3000);
   }
 
-  async onClick(): Promise<void> {
-    this.message = await bindCallback<any, any>(chrome.tabs.sendMessage.bind(this, this.tabId, 'request'))()
-      .pipe(
-        map(msg =>
-          chrome.runtime.lastError
-            ? 'The current page is protected by the browser, goto: https://www.google.nl and try again.'
-            : msg
-        )
-      )
-      .toPromise();
-  }
 
   public handleUserSendQuestion(event) {
-    console.log('Valore ricevuto:', event);
+    this.$canUserSendInput.next(false)
+    console.log('User send:', event);
+    this._numberMsg += 1
+    const msg: Message =
+      new ConcreteMessage(event, this._numberMsg, Sender.Sender, new Date(), this._url)
+    this.$senderNewMessage.next(msg)
+    this.chatService.executeQueryContent(msg).subscribe(value => {
+      value = value['result']
+      console.log("Risposta backend:" + value)
+      this._numberMsg += 1
+      const result = value === 'error' ? "Il mio lavoro qui è finito!" : value
+      const msg: Message =
+        new ConcreteMessage(result, this._numberMsg, Sender.Chatbot, new Date(), this._url)
+      this.$senderNewMessage.next(msg)
+      if(result === 'error'){
+        this.$canUserSendInput.next(false)
 
+      }
+      else {
+        this.$canUserSendInput.next(true)
+      }
+
+    })
   }
 
-  //TODO EM: questa pagina puzza fai schifo
-
-  /**
-   * All'init attraverso il service invia il contentuo della pagina come testo recuperato dal content script girato
-   * nella current tab dellutente (nel browser).
-   *
-   * Permette di inviare il primo messaggio al backend attraverso il service e notificherà
-   * alla chat del nuovo messaggio da inserire nella lista,
-   * all'invio bloccerà il tasto per inviare nuovamente un nuovo messaggio finchè non
-   * ci sarà risposta dal backend.
-   *
-   * I prossimi messaggi avranno lo stesso flusso (il bottone si disattiva finchè la risposta non viene elaborata).
-   * è possibile comunque anticiparsi scrivendo la nuova domanda.
-   *
-   *
-   */
+  ngOnInit(): void {
+    this.$chromeContentIsChanged.subscribe(value => {
+      if (value !== null) {
+        this.chatService.executeSendContentOfPage(value)
+          .subscribe(data => {
+            if (data['result'] === 'ok') {
+              console.log("Backend is ready!")
+              this._numberMsg = 1
+              const msg: Message =
+                new ConcreteMessage("Ciao come posso aiutarti?", this._numberMsg, Sender.Chatbot, new Date(), this._url)
+              this.$senderNewMessage.next(msg)
+              this.$canUserSendInput.next(true)
+            } else {
+              this._numberMsg = 1
+              const msg: Message =
+                new ConcreteMessage("Ciao, scusa ho mal di pancia non posso aiutarti!", this._numberMsg, Sender.Chatbot, new Date(), this._url)
+              this.$senderNewMessage.next(msg)
+              console.log("Mhhh maybe error")
+            }
+          })
+      }
+    })
+  }
 
 }

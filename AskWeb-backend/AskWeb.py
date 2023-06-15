@@ -16,13 +16,24 @@ embeddings_file = f"embeddings.npz"
 
 
 # api in cui mi passi il contenuto della pagina e ti ritorno ok oppure error
-@app.route('/api/post_page', methods=['POST'])
+@app.route('/api/v1/post_page', methods=['POST'])
 def post_page():
     global recommender
     recommender = SemanticSearch()
-    data = request.get_json()
-    Text = data.get('text')
-    chunks = text_to_chunks(Text)
+
+    try:
+        data = request.get_json()
+        url = data.get('url')
+        content = data.get('content')
+
+        print(f"Url is {url}")
+        print(f"content is {content}")
+
+    except KeyError as e:
+        print(e)
+        return jsonify({'result': 'error'})
+
+    chunks = text_to_chunks(content)
     recommender.fit(chunks)
     #np.savez(embeddings_file, embeddings=recommender.corpus_embeddings, dim_corpus=recommender.dim_corpus)
     if recommender.fitted:
@@ -31,13 +42,25 @@ def post_page():
         return jsonify({'result': 'error'})
 
 # api in cui mi passi la domanda e ti ritorno la risposta
-@app.route('/api/post_query', methods=['POST'])
+@app.route('/api/v1/post_query', methods=['POST'])
 def post_query():
     global recommender
-    data = request.get_json()
-    Domanda = data.get('text')
+
+    try:
+        data = request.get_json()
+        id = data.get('id')
+        content = data.get('content')
+        time = data.get('time')
+        sender = data.get('sender')
+        url = data.get('url')
+        print(f"content is {content}")
+
+    except KeyError as e:
+        print(e)
+        return jsonify({'result': 'error'})
+
     if (recommender.fitted):
-        answer = generate_answer(Domanda, openAI_key)
+        answer = generate_answer(content, openAI_key)
         return jsonify({'answer': answer})
     else:
         return jsonify({'answer': "error"})

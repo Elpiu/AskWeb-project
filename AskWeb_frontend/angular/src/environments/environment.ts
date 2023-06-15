@@ -4,7 +4,9 @@
 
 export const environment = {
   production: false,
-  backendUrl: "http://localhost:5000"
+  backendUrl: "http://localhost:5000",
+  apiUrlPostPage: "/api/v1/post_page",
+  apiUrlPostQuery: "/api/v1/post_query"
 };
 
 /*

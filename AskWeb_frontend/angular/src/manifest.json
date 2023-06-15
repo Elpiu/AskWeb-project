@@ -4,8 +4,14 @@
   "short_name": "AskWeb-frontend",
   "version": "1.0.0",
   "description": "Generated with @larscom/ng-chrome-extension",
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "permissions": [
-    "tabs"
+    "tabs",
+    "http://*/*",
+    "https://*/*"
   ],
   "action": {
     "default_popup": "index.html?#/popup",

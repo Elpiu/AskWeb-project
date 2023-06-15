@@ -23,8 +23,8 @@ export class InputBarComponent implements OnInit {
       if(this.textAreaSelector.nativeElement.value != "")
       $event.preventDefault()
       this.userSendQuestion.emit(text)
+      this.textAreaSelector.nativeElement.value = ""
     }
-    this.textAreaSelector.nativeElement.value = ""
   }
 
   ngOnInit(): void {
