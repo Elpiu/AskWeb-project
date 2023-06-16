@@ -7,67 +7,12 @@ from sentence_transformers import SentenceTransformer, util
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
-recommender = None
+
 model = SentenceTransformer('msmarco-distilbert-base-tas-b')
 openAI_key = "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"
 chunk_size = 400
 n_chunks = 9
 embeddings_file = f"embeddings.npz"
-
-
-# api in cui mi passi il contenuto della pagina e ti ritorno ok oppure error
-@app.route('/api/v1/post_page', methods=['POST'])
-def post_page():
-    global recommender
-    recommender = SemanticSearch()
-
-    try:
-        data = request.get_json()
-        url = data.get('url')
-        content = data.get('content')
-
-        print(f"Url is {url}")
-        print(f"content is {content}")
-
-    except KeyError as e:
-        print(e)
-        return jsonify({'result': 'error'})
-
-    chunks = text_to_chunks(content)
-    recommender.fit(chunks)
-    #np.savez(embeddings_file, embeddings=recommender.corpus_embeddings, dim_corpus=recommender.dim_corpus)
-    if recommender.fitted:
-        return jsonify({'result': 'ok'})
-    else:
-        return jsonify({'result': 'error'})
-
-# api in cui mi passi la domanda e ti ritorno la risposta
-@app.route('/api/v1/post_query', methods=['POST'])
-def post_query():
-    global recommender
-
-    try:
-        data = request.get_json()
-        id = data.get('id')
-        content = data.get('content')
-        time = data.get('time')
-        sender = data.get('sender')
-        url = data.get('url')
-        print(f"content is {content}")
-
-    except KeyError as e:
-        print(e)
-        return jsonify({'result': 'error'})
-
-    if (recommender.fitted):
-        answer = generate_answer(content, openAI_key)
-        return jsonify({'answer': answer})
-    else:
-        return jsonify({'answer': "error"})
-
-
-if __name__ == '__main__':
-    app.run()
 
 
 def preprocess(text):
@@ -168,8 +113,61 @@ def generate_answer(question, openAI_key):
     prompt += f"Query: {question}\nAnswer:"
     # print(prompt)
     answer = generate_text(openAI_key, prompt, "text-davinci-003")
-    # answer = prompt
+    #answer = prompt
     return answer
 
 
+# api in cui mi passi il contenuto della pagina e ti ritorno ok oppure error
+@app.route('/api/v1/post_page', methods=['POST'])
+def post_page():
+    global recommender
 
+    try:
+        data = request.get_json()
+        url = data.get('url')
+        content = data.get('content')
+
+        print(f"Url is {url}")
+        #print(f"content is {content}")
+
+    except KeyError as e:
+        print(e)
+        return jsonify({'result': 'error'})
+
+    chunks = text_to_chunks(content)
+    recommender.fit(chunks)
+    #np.savez(embeddings_file, embeddings=recommender.corpus_embeddings, dim_corpus=recommender.dim_corpus)
+    if recommender.fitted:
+        return jsonify({'result': 'ok'})
+    else:
+        return jsonify({'result': 'error'})
+
+# api in cui mi passi la domanda e ti ritorno la risposta
+@app.route('/api/v1/post_query', methods=['POST'])
+def post_query():
+    global recommender
+
+    try:
+        data = request.get_json()
+        id = data.get('id')
+        content = data.get('content')
+        time = data.get('time')
+        sender = data.get('sender')
+        url = data.get('url')
+        print(f"content is {content}")
+
+    except KeyError as e:
+        print(e)
+        return jsonify({'result': 'error'})
+
+    if (recommender.fitted):
+        answer = generate_answer(content, openAI_key)
+        print(f"la risposta è: {answer}")
+        return jsonify({'result': answer})
+    else:
+        return jsonify({'result': "error"})
+
+
+if __name__ == '__main__':
+    recommender = SemanticSearch()
+    app.run()
