@@ -24,9 +24,7 @@ comunicazione.
 
 ### How it works?
 
-Usiamo miro per coordinarci, qui è presente lo schema del
-progetto [MIRO](https://miro.com/welcomeonboard/emhaWDF6NFUxRTB2RFZPdndHS1NGU1VrYUFHYnl0TXQ2T2RiTEw3Y0ljeXN1UG5WdkRLUHN2aVpENHZMdXpqb3wzNDU4NzY0NTM2ODgzODY1MDM2fDI=?share_link_id=26744652021)
-ATTENZIONE il link è d'invito al team, chiunque ha quel link può modificare la board.
+Usiamo miro per coordinarci
 
 All'interno di questa repository troverai due cartelle che contengono i componenti del progetto. La cartella "frontend"
 contiene l'applicazione scritta in Angular, che sarà necessario compilare e caricare come plugin nel browser. La
